@@ -1,0 +1,8 @@
+{
+  "name": "Node.js CI",
+  "steps": [
+    { "name": "Install", "command": "npm install" },
+    { "name": "Test",    "command": "npm test" },
+    { "name": "Build",   "command": "npm run build --if-present" }
+  ]
+}
