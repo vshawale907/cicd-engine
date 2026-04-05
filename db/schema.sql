@@ -34,3 +34,11 @@ CREATE TABLE IF NOT EXISTS logs (
   line TEXT NOT NULL,
   logged_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'viewer',  -- 'admin' or 'viewer'
+  created_at TIMESTAMP DEFAULT NOW()
+);
