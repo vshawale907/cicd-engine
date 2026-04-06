@@ -3,11 +3,14 @@ require('dotenv').config();
 
 const redisUrl = process.env.REDIS_URL;
 const isTls = redisUrl && redisUrl.startsWith('rediss://');
-const redisOptions = isTls ? { 
-  tls: { rejectUnauthorized: false },
+const redisOptions = {
   family: 0,
-  connectTimeout: 30000
-} : {};
+  connectTimeout: 30000,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+  keepAlive: 30000
+};
+if (isTls) redisOptions.tls = { rejectUnauthorized: false };
 
 // IMPORTANT: You need TWO separate Redis connections for pub/sub
 // A single connection cannot both publish and subscribe — Redis limitation

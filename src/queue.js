@@ -6,13 +6,16 @@ const isTls = redisUrl && redisUrl.startsWith('rediss://');
 
 // Bull gives us: job persistence, retries, delayed jobs, job states
 // All stored in Redis automatically
-const pipelineQueue = new Bull('pipeline-jobs', redisUrl, {
-  redis: isTls ? { 
-    tls: { rejectUnauthorized: false }, 
-    family: 0,
-    connectTimeout: 30000 
-  } : {}
-});
+const redisOpts = {
+  family: 0,
+  connectTimeout: 30000,
+  maxRetriesPerRequest: null,
+  enableReadyCheck: false,
+  keepAlive: 30000
+};
+if (isTls) redisOpts.tls = { rejectUnauthorized: false };
+
+const pipelineQueue = new Bull('pipeline-jobs', redisUrl, { redis: redisOpts });
 
 pipelineQueue.on('error', (err) => {
   console.error('❌ Queue error:', err.message);
