@@ -14,12 +14,25 @@ A self-hosted, production-grade Continuous Integration & Deployment engine built
 
 ---
 
-## What it does
+## CI/CD Engine
 
-Push code to GitHub → your engine wakes up, clones the repo, runs your pipeline steps inside an isolated Docker container, and streams every log line live to the browser — all within seconds.
+![Deployed on Railway](https://img.shields.io/badge/deployed-railway-purple)
 
-- **Webhook-driven** — GitHub notifies your server on every `git push` via HMAC-signed webhooks
-- **Queue-backed** — jobs are processed reliably via a Redis + Bull queue with automatic retries
+A lightweight, custom-built CI/CD engine designed to automatically run on every GitHub push, execute pipeline steps inside ephemeral Docker containers, and stream logs live to a web dashboard.
+
+## Features
+
+- **GitHub Webhook Integration**: Listens for push events
+- **Docker Isolation**: Each step runs in an isolated `node:18-alpine` (or customized) Docker container
+- **Pub/Sub Logging**: Streams logs via Redis from the worker process to the web dashboard in real time
+- **Queue-based Processing**: Uses Bull to queue and process multiple concurrent jobs robustly
+- **Metrics Dashboard**: Recharts-powered graphs and stats of pipelines.
+- **Role-based Authentication**: JWT integration for viewers and admins.
+- **Slack Notifications**: Pipeline failure alerts integrated with Slack Block Kit.
+
+## Deployment
+
+Refer to the complete Railway deployment guide at [`docs/deploy.md`](docs/deploy.md).
 - **Docker-isolated** — every pipeline step runs in a fresh container so nothing pollutes your host machine
 - **Live log streaming** — logs appear in the browser in real time via WebSocket + Redis Pub/Sub
 - **Persistent history** — every run, step, and log line is stored in PostgreSQL
@@ -84,22 +97,54 @@ GitHub (git push)
 
 ---
 
-## Pipeline configuration
+## Pipeline Configuration
 
-Add a `.pipeline.json` file to the root of any repository this engine manages:
+Pipelines are defined by a configuration file in the root of your repository. The CI/CD engine supports YAML (`.pipeline.yml` or `.pipeline.yaml`) and JSON (`.pipeline.json`).
+
+The engine will look for files in this priority order:
+1. `.pipeline.yml`
+2. `.pipeline.yaml`
+3. `.pipeline.json`
+
+### Example: `.pipeline.yml` (Recommended)
+
+```yaml
+name: Node.js CI
+steps:
+  - name: Install
+    command: npm install
+    image: node:20-alpine
+  - name: Test
+    command: npm test
+  - name: Build
+    command: npm run build --if-present
+```
+
+### Example: `.pipeline.json`
 
 ```json
 {
   "name": "Node.js CI",
   "steps": [
-    { "name": "Install",  "command": "npm install" },
-    { "name": "Test",     "command": "npm test" },
-    { "name": "Build",    "command": "npm run build --if-present" }
+    {
+      "name": "Install",
+      "command": "npm install"
+    },
+    {
+      "name": "Test",
+      "command": "npm test"
+    }
   ]
 }
 ```
 
-Each step runs in a fresh `node:18-alpine` Docker container. If any step fails (non-zero exit code), subsequent steps are skipped and the run is marked `failed`.
+### Configuration Fields
+
+- **name** (optional): The name of your pipeline.
+- **steps** (required): An array of steps to execute sequentially.
+  - **name** (required): The name of the step (e.g., "Run Tests").
+  - **command** (required): The shell command to execute inside the Docker container.
+  - **image** (optional): The Docker image to use for this specific step. Defaults to `node:18-alpine` if not provided. You can specify any public Docker Hub image (e.g., `python:3.11-alpine`, `golang:1.21-alpine`). If any step fails (non-zero exit code), subsequent steps are skipped and the run is marked `failed`.
 
 ---
 
@@ -336,6 +381,9 @@ Full deployment guide coming in `docs/deploy.md`.
 Pull requests are welcome. For major changes, open an issue first to discuss what you'd like to change.
 
 ---
+
+<!-- Email: admin@example.com
+Password: supersecret -->
 
 ## License
 

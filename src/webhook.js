@@ -84,4 +84,4 @@ router.post('/github', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, verifySignature };

@@ -7,6 +7,8 @@
  *   await apiFetch('/api/pipelines/1/trigger', { method: 'POST' })
  */
 
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+
 let _token = null;
 
 /** Called by AuthContext to keep the token in sync. */
@@ -32,5 +34,6 @@ export async function apiFetch(url, options = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  return fetch(url, { ...options, headers });
+  const fullUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
+  return fetch(fullUrl, { ...options, headers });
 }

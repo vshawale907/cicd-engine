@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET;
 const SALT_ROUNDS = 10;
 
 /**
@@ -30,10 +29,11 @@ async function comparePassword(password, hash) {
  * @returns {string} signed JWT
  */
 function generateToken(user) {
-  if (!JWT_SECRET) throw new Error('JWT_SECRET is not set in environment');
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET is not set in environment');
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
-    JWT_SECRET,
+    secret,
     { expiresIn: '7d' }
   );
 }
@@ -45,8 +45,9 @@ function generateToken(user) {
  * @returns {{ id: number, email: string, role: string }}
  */
 function verifyToken(token) {
-  if (!JWT_SECRET) throw new Error('JWT_SECRET is not set in environment');
-  return jwt.verify(token, JWT_SECRET);
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET is not set in environment');
+  return jwt.verify(token, secret);
 }
 
 module.exports = { hashPassword, comparePassword, generateToken, verifyToken };

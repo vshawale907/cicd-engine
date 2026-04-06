@@ -3,15 +3,18 @@
   "steps": [
     {
       "name": "Install",
-      "command": "npm install"
+      "command": "npm install",
+      "image": "node:20-alpine"
     },
     {
       "name": "Test",
-      "command": "echo 'tests passed!'"
+      "command": "echo 'tests passed!'",
+      "image": "node:20-alpine"
     },
     {
-      "name": "Build",
-      "command": "npm run build --if-present"
+      "name": "Python check",
+      "command": "python3 --version",
+      "image": "python:3.11-alpine"
     }
   ]
 }

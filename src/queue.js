@@ -1,9 +1,14 @@
 const Bull = require('bull');
 require('dotenv').config();
 
+const redisUrl = process.env.REDIS_URL;
+const isTls = redisUrl && redisUrl.startsWith('rediss://');
+
 // Bull gives us: job persistence, retries, delayed jobs, job states
 // All stored in Redis automatically
-const pipelineQueue = new Bull('pipeline-jobs', process.env.REDIS_URL);
+const pipelineQueue = new Bull('pipeline-jobs', redisUrl, {
+  redis: isTls ? { tls: { rejectUnauthorized: false } } : {}
+});
 
 pipelineQueue.on('error', (err) => {
   console.error('❌ Queue error:', err.message);

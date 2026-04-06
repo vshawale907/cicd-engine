@@ -4,10 +4,11 @@ const http = require('http');
 const WebSocket = require('ws');
 require('dotenv').config();
 
-const webhookRouter = require('./webhook');
+const { router: webhookRouter } = require('./webhook');
 const pipelinesRouter = require('./routes/pipelines');
 const runsRouter = require('./routes/runs');
 const authRouter = require('./routes/auth');
+const metricsRouter = require('./routes/metrics');
 const { subscribeToRun, unsubscribeFromRun } = require('./pubsub');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const { verifyToken } = require('./auth');
@@ -19,36 +20,38 @@ const server = http.createServer(app);
 // WebSocket server shares the same HTTP server, different path
 const wss = new WebSocket.Server({ server, path: '/ws' });
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
 app.use(express.json());
 
-// ─── Public routes ────────────────────────────────────────────────────────────
-// Webhook MUST stay unauthenticated — GitHub cannot send JWT tokens
+// ─── Public routes (no auth) ───────────────────────────────────────────────────
+// Webhook MUST stay unauthenticated — GitHub sends HMAC, not JWT tokens
 app.use('/webhook', webhookRouter);
+// Auth endpoints (register / login) are public by definition
 app.use('/api/auth', authRouter);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ─── Protected API routes ─────────────────────────────────────────────────────
-// GET /api/pipelines — any authenticated user
-app.get('/api/pipelines', requireAuth, (req, res, next) => {
-  pipelinesRouter(req, res, next);
-});
 
-// POST /api/pipelines/:id/trigger — admin only
-app.post('/api/pipelines/:id/trigger', requireAdmin, (req, res, next) => {
-  pipelinesRouter(req, res, next);
-});
+app.use('/api/metrics', requireAuth, metricsRouter);
 
-// Mount full pipelines router (handles /api/pipelines/:id GET etc.) — requireAuth
-app.use('/api/pipelines', requireAuth, pipelinesRouter);
+// ─── Pipelines — apply per-method auth at router level ────────────────────────
+const securePipelinesRouter = express.Router();
+// GET /api/pipelines and GET /api/pipelines/:id → any authenticated user
+securePipelinesRouter.get('/', requireAuth, (req, res, next) => pipelinesRouter(req, res, next));
+securePipelinesRouter.get('/:id', requireAuth, (req, res, next) => pipelinesRouter(req, res, next));
+// POST /api/pipelines/:id/trigger → admin only
+securePipelinesRouter.post('/:id/trigger', requireAdmin, (req, res, next) => pipelinesRouter(req, res, next));
+app.use('/api/pipelines', securePipelinesRouter);
 
-// All runs routes — requireAuth
+// ─── Runs — all endpoints require auth ────────────────────────────────────────
 app.use('/api/runs', requireAuth, runsRouter);
 
 // ─── WebSocket: verify token from query param ?token=xxx ──────────────────────
 wss.on('connection', (ws, req) => {
-  // Extract token from query string: ws://host/ws?token=xxx
-  const url = new URL(req.url, `http://localhost`);
+  const url = new URL(req.url, 'http://localhost');
   const token = url.searchParams.get('token');
 
   if (!token) {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { apiFetch } from '../utils/api'
 
 const ICONS  = { success:'✅', failed:'❌', running:'🔄', pending:'⏳' }
 const COLORS = { success:'text-emerald-400', failed:'text-red-400', running:'text-blue-400', pending:'text-yellow-400' }
@@ -18,7 +19,7 @@ export default function RunHistory() {
 
   async function fetchRuns() {
     const url = `/api/runs${pipelineId ? `?pipelineId=${pipelineId}` : ''}`
-    const res = await fetch(url)
+    const res = await apiFetch(url)
     setRuns(await res.json())
     setLoading(false)
   }

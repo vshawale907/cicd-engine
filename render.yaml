@@ -1,0 +1,50 @@
+services:
+  # 1. PostgreSQL Database
+  - type: psql
+    name: cicd-db
+    plan: free
+    postgresMajorVersion: 15
+
+  # 2. Node.js Backend Server
+  - type: web
+    name: cicd-server
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && cd db && echo 'Migrations will run on start.'
+    startCommand: npm run migrate && npm run start:prod
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cicd-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: REDIS_URL
+        sync: false # Must be set manually in the Render Dashboard from your Upstash instance
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false # Must be set manually in the Render Dashboard
+      - key: FRONTEND_URL
+        sync: false # Must be set manually in the Render Dashboard once Vercel is deployed
+
+  # 3. Worker Process
+  - type: worker
+    name: cicd-worker
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm run worker:prod
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cicd-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false
+      - key: NODE_ENV
+        value: production

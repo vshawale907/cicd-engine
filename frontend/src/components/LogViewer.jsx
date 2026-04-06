@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { apiFetch } from '../utils/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function LogViewer() {
   const { runId } = useParams()
+  const { token } = useAuth()
   const [run, setRun] = useState(null)
   const [logs, setLogs] = useState([])
   const [done, setDone] = useState(false)
@@ -18,24 +21,28 @@ export default function LogViewer() {
     loadRun()
     openWebSocket()
     return () => wsRef.current?.close()
-  }, [runId])
+  }, [runId, token])
 
   async function loadRun() {
-    const res = await fetch(`/api/runs/${runId}`)
+    const res = await apiFetch(`/api/runs/${runId}`)
     const data = await res.json()
     setRun(data)
 
     // If already finished, load logs from DB (no need for live stream)
     if (data.status === 'success' || data.status === 'failed') {
       setDone(true)
-      const logsRes = await fetch(`/api/runs/${runId}/logs`)
+      const logsRes = await apiFetch(`/api/runs/${runId}/logs`)
       const logsData = await logsRes.json()
       setLogs(logsData.map(l => l.line))
     }
   }
 
   function openWebSocket() {
-    const ws = new WebSocket(`ws://localhost:3000/ws`)
+    if (!token) return
+    
+    // Pass token as query param — backend verifies it on connection
+    const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.host}/ws`
+    const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`)
     wsRef.current = ws
 
     ws.onopen = () => {

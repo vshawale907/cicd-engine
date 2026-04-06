@@ -1,10 +1,14 @@
 const Redis = require('ioredis');
 require('dotenv').config();
 
+const redisUrl = process.env.REDIS_URL;
+const isTls = redisUrl && redisUrl.startsWith('rediss://');
+const redisOptions = isTls ? { tls: { rejectUnauthorized: false } } : {};
+
 // IMPORTANT: You need TWO separate Redis connections for pub/sub
 // A single connection cannot both publish and subscribe — Redis limitation
-const publisher = new Redis(process.env.REDIS_URL);
-const subscriber = new Redis(process.env.REDIS_URL);
+const publisher = new Redis(redisUrl, redisOptions);
+const subscriber = new Redis(redisUrl, redisOptions);
 
 publisher.on('connect', () => console.log('✅ Redis publisher connected'));
 subscriber.on('connect', () => console.log('✅ Redis subscriber connected'));

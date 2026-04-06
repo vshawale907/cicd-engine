@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { apiFetch } from '../utils/api'
+import { useAuth } from '../context/AuthContext'
 
 const STATUS = {
   success: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
@@ -11,6 +13,7 @@ const STATUS = {
 export default function PipelineList() {
   const [pipelines, setPipelines] = useState([])
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   useEffect(() => {
     fetchPipelines()
@@ -19,13 +22,13 @@ export default function PipelineList() {
   }, [])
 
   async function fetchPipelines() {
-    const res = await fetch('/api/pipelines')
+    const res = await apiFetch('/api/pipelines')
     setPipelines(await res.json())
     setLoading(false)
   }
 
   async function trigger(id) {
-    await fetch(`/api/pipelines/${id}/trigger`, { method: 'POST' })
+    await apiFetch(`/api/pipelines/${id}/trigger`, { method: 'POST' })
     fetchPipelines()
   }
 
@@ -55,10 +58,13 @@ export default function PipelineList() {
                     {p.last_status}
                   </span>
                 )}
-                <button onClick={() => trigger(p.id)}
-                  className="text-sm bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg transition">
-                  ▶ Run
-                </button>
+                {/* Only admins can trigger runs */}
+                {user?.role === 'admin' && (
+                  <button onClick={() => trigger(p.id)}
+                    className="text-sm bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg transition">
+                    ▶ Run
+                  </button>
+                )}
                 <Link to={`/runs?pipelineId=${p.id}`}
                   className="text-sm bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition">
                   History
