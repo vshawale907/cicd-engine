@@ -2,7 +2,7 @@ const Redis = require('ioredis');
 require('dotenv').config();
 
 const redisUrl = process.env.REDIS_URL;
-const isTls = redisUrl && redisUrl.startsWith('rediss://');
+const isTls = redisUrl && (redisUrl.startsWith('rediss://') || redisUrl.includes('upstash.io'));
 const redisOptions = {
   family: 0,
   connectTimeout: 30000,

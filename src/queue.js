@@ -2,8 +2,7 @@ const Bull = require('bull');
 require('dotenv').config();
 
 const redisUrl = process.env.REDIS_URL;
-const isTls = redisUrl && redisUrl.startsWith('rediss://');
-
+const isTls = redisUrl && (redisUrl.startsWith('rediss://') || redisUrl.includes('upstash.io'));
 // Bull gives us: job persistence, retries, delayed jobs, job states
 // All stored in Redis automatically
 const redisOpts = {
