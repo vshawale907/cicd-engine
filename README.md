@@ -382,8 +382,7 @@ Pull requests are welcome. For major changes, open an issue first to discuss wha
 
 ---
 
-<!-- Email: admin@example.com
-Password: supersecret -->
+
 
 ## License
 
