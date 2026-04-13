@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react'
-import { setToken } from '../utils/api'
+import { apiFetch, setToken } from '../utils/api'
 
 const AuthContext = createContext(null)
 
@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
   const [token, setTokenState] = useState(null)
 
   const login = useCallback(async (email, password) => {
-    const res = await fetch('/api/auth/login', {
+    const res = await apiFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const register = useCallback(async (email, password) => {
-    const res = await fetch('/api/auth/register', {
+    const res = await apiFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, role: 'viewer' }),
