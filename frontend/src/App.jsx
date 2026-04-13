@@ -5,15 +5,22 @@ import PipelineList from './components/PipelineList'
 import RunHistory from './components/RunHistory'
 import LogViewer from './components/LogViewer'
 import LoginPage from './components/LoginPage'
+import SignUpPage from './components/SignUpPage'
 import MetricsDashboard from './components/MetricsDashboard'
 
 export default function App() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [page, setPage] = useState('pipelines')
+  const [authPage, setAuthPage] = useState('login') // 'login' | 'signup'
 
-  // Not logged in → show LoginPage
-  if (!user) return <LoginPage />
+  // Not logged in → show Login or SignUp
+  if (!user) {
+    if (authPage === 'signup') {
+      return <SignUpPage onGoToLogin={() => setAuthPage('login')} />
+    }
+    return <LoginPage onGoToSignUp={() => setAuthPage('signup')} />
+  }
 
   const isPipelinesActive = page === 'pipelines' && (location.pathname === '/' || location.pathname.startsWith('/runs'));
 

@@ -30,6 +30,25 @@ export function AuthProvider({ children }) {
     return data
   }, [])
 
+  const register = useCallback(async (email, password) => {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, role: 'viewer' }),
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.error || 'Registration failed')
+    }
+
+    const data = await res.json()
+    setTokenState(data.token)
+    setToken(data.token)
+    setUser(data.user)
+    return data
+  }, [])
+
   const logout = useCallback(() => {
     setTokenState(null)
     setToken(null)
@@ -37,7 +56,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   )

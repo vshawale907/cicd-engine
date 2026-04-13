@@ -3,7 +3,14 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const yaml = require('js-yaml');
-require('dotenv').config();
+
+// ─── Environment-aware config loading ─────────────────────────────────────────
+const envFile =
+  process.env.NODE_ENV === 'production' ? '.env.production' :
+  process.env.NODE_ENV === 'test'       ? '.env.test' :
+                                          '.env.development';
+require('dotenv').config({ path: path.resolve(process.cwd(), envFile) });
+require('dotenv').config({ path: path.resolve(process.cwd(), '.env') });
 
 const pipelineQueue = require('./queue');
 const db = require('./db');

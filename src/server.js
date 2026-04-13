@@ -2,7 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const WebSocket = require('ws');
-require('dotenv').config();
+
+// ─── Environment-aware config loading ─────────────────────────────────────────
+// Loads .env.development for local dev, .env.production for prod, falls back to .env
+const path = require('path');
+const envFile =
+  process.env.NODE_ENV === 'production' ? '.env.production' :
+  process.env.NODE_ENV === 'test'       ? '.env.test' :
+                                          '.env.development';
+require('dotenv').config({ path: path.resolve(process.cwd(), envFile) });
+// Fallback: also load .env so any keys not in the specific file still resolve
+require('dotenv').config({ path: path.resolve(process.cwd(), '.env') });
 
 const { router: webhookRouter } = require('./webhook');
 const pipelinesRouter = require('./routes/pipelines');
