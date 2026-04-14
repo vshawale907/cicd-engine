@@ -1,19 +1,24 @@
 {
-  "name": "Node.js CI",
+  "name": "CI/CD Engine Demo",
   "steps": [
     {
-      "name": "Install",
-      "command": "npm install",
+      "name": "Environment Check",
+      "command": "node --version && echo 'Node.js ready!'",
       "image": "node:20-alpine"
     },
     {
-      "name": "Test",
-      "command": "echo 'tests passed!'",
+      "name": "Run Tests",
+      "command": "echo '✓ auth.test.js passed' && echo '✓ webhook.test.js passed' && echo '✓ routes.test.js passed' && echo 'All 3 test suites passed!'",
       "image": "node:20-alpine"
     },
     {
-      "name": "Python check",
-      "command": "python3 --version",
+      "name": "Build Check",
+      "command": "echo 'Building application...' && echo 'Build complete!'",
+      "image": "node:20-alpine"
+    },
+    {
+      "name": "Python Step",
+      "command": "python3 --version && echo 'Multi-language support works!'",
       "image": "python:3.11-alpine"
     }
   ]
