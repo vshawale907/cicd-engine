@@ -70,11 +70,13 @@ pipelineQueue.process(2, async (job) => {
     // 4. Run each step one by one
     let allPassed = true;
 
-    for (const step of steps) {
+    // Helper function to execute a single step
+    async function executeStep(step, isParallel = false) {
       // ─── Feature 1: per-step Docker image ───────────────────────────────────
       const image = step.image || 'node:18-alpine';
-      publishLog(runId, `\n▶️ Step: ${step.name}  [${image}]`);
-      publishLog(runId, `   Command: ${step.command}`);
+      const prefix = isParallel ? `[${step.name}] ` : '';
+      publishLog(runId, `\n▶️ ${prefix}Step: ${step.name}  [${image}]`);
+      publishLog(runId, `   ${prefix}Command: ${step.command}`);
       // ────────────────────────────────────────────────────────────────────────
 
       // Insert step record
@@ -87,7 +89,7 @@ pipelineQueue.process(2, async (job) => {
 
       try {
         const { exitCode } = await runStep(tmpDir, step.command, (line) => {
-          publishLog(runId, `  ${line}`);
+          publishLog(runId, `  ${prefix}${line}`);
           // Save every log line to DB for history
           db.query(
             `INSERT INTO logs (run_id, step_id, line) VALUES ($1, $2, $3)`,
@@ -102,11 +104,11 @@ pipelineQueue.process(2, async (job) => {
         );
 
         if (exitCode === 0) {
-          publishLog(runId, `✅ "${step.name}" passed`);
+          publishLog(runId, `✅ ${prefix}"${step.name}" passed`);
+          return true;
         } else {
-          publishLog(runId, `❌ "${step.name}" failed (exit code: ${exitCode})`);
-          allPassed = false;
-          break; // Stop on first failure
+          publishLog(runId, `❌ ${prefix}"${step.name}" failed (exit code: ${exitCode})`);
+          return false;
         }
 
       } catch (stepErr) {
@@ -114,9 +116,26 @@ pipelineQueue.process(2, async (job) => {
           `UPDATE steps SET status = 'failed', completed_at = NOW() WHERE id = $1`,
           [stepId]
         );
-        publishLog(runId, `❌ "${step.name}" errored: ${stepErr.message}`);
-        allPassed = false;
-        break;
+        publishLog(runId, `❌ ${prefix}"${step.name}" errored: ${stepErr.message}`);
+        return false;
+      }
+    }
+
+    for (const step of steps) {
+      if (step.parallel) {
+        publishLog(runId, `\n⚡ Starting ${step.parallel.length} parallel steps...`);
+        const results = await Promise.all(step.parallel.map(s => executeStep(s, true)));
+        if (results.some(passed => !passed)) {
+          allPassed = false;
+          publishLog(runId, `❌ Parallel group failed.`);
+          break;
+        }
+      } else {
+        const passed = await executeStep(step, false);
+        if (!passed) {
+          allPassed = false;
+          break;
+        }
       }
     }
 

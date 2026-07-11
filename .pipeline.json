@@ -7,19 +7,28 @@
       "image": "node:20-alpine"
     },
     {
-      "name": "Run Tests",
-      "command": "echo '✓ auth.test.js passed' && echo '✓ webhook.test.js passed' && echo '✓ routes.test.js passed' && echo 'All 3 test suites passed!'",
-      "image": "node:20-alpine"
+      "parallel": [
+        {
+          "name": "Run Tests",
+          "command": "sleep 2 && echo '✓ auth.test.js passed' && echo '✓ webhook.test.js passed' && echo 'All test suites passed!'",
+          "image": "node:20-alpine"
+        },
+        {
+          "name": "Linting",
+          "command": "sleep 1 && echo 'Linting source code...' && echo 'No linting errors found.'",
+          "image": "node:20-alpine"
+        },
+        {
+          "name": "Python Script",
+          "command": "sleep 3 && python3 --version && echo 'Multi-language support works!'",
+          "image": "python:3.11-alpine"
+        }
+      ]
     },
     {
       "name": "Build Check",
       "command": "echo 'Building application...' && echo 'Build complete!'",
       "image": "node:20-alpine"
-    },
-    {
-      "name": "Python Step",
-      "command": "python3 --version && echo 'Multi-language support works!'",
-      "image": "python:3.11-alpine"
     }
   ]
 }
