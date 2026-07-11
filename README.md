@@ -228,11 +228,41 @@ sequenceDiagram
 
 ```mermaid
 erDiagram
-    users { int id; text email; text password_hash; text role }
-    pipelines { int id; text repo_url; text repo_name; text branch }
-    runs { int id; int pipeline_id; text commit_sha; text status; text triggered_by; timestamp triggered_at; timestamp completed_at }
-    steps { int id; int run_id; text name; text command; text status; int exit_code }
-    logs { int id; int run_id; int step_id; text line }
+    users {
+        int id
+        text email
+        text password_hash
+        text role
+    }
+    pipelines {
+        int id
+        text repo_url
+        text repo_name
+        text branch
+    }
+    runs {
+        int id
+        int pipeline_id
+        text commit_sha
+        text status
+        text triggered_by
+        timestamp triggered_at
+        timestamp completed_at
+    }
+    steps {
+        int id
+        int run_id
+        text name
+        text command
+        text status
+        int exit_code
+    }
+    logs {
+        int id
+        int run_id
+        int step_id
+        text line
+    }
 
     pipelines ||--o{ runs : ""
     runs ||--o{ steps : ""
