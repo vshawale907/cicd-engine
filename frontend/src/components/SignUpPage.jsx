@@ -108,7 +108,7 @@ export default function SignUpPage({ onGoToLogin }) {
             <div className="text-center py-4">
               <div className="text-5xl mb-4">🎉</div>
               <h2 className="text-xl font-bold text-white mb-2">Account created!</h2>
-              <p className="text-slate-400 text-sm">You're now signed in as a <span className="text-emerald-400 font-medium">viewer</span>. Redirecting to your dashboard…</p>
+              <p className="text-slate-400 text-sm">You're now signed in as an <span className="text-emerald-400 font-medium">admin</span>. Redirecting to your dashboard…</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -181,11 +181,10 @@ export default function SignUpPage({ onGoToLogin }) {
               </div>
 
               {/* Role info banner */}
-              <div className="flex items-start gap-2.5 bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2.5">
-                <span className="text-blue-400 text-sm mt-0.5">ℹ️</span>
+              <div className="flex items-start gap-2.5 bg-emerald-900/20 border border-emerald-700/40 rounded-lg px-3 py-2.5">
+                <span className="text-emerald-400 text-sm mt-0.5">✅</span>
                 <p className="text-xs text-slate-400">
-                  New accounts are granted <span className="text-blue-300 font-medium">viewer</span> access.
-                  Contact an admin to be upgraded to admin.
+                  New accounts are granted <span className="text-emerald-400 font-medium">admin</span> access — you can view pipelines, trigger runs, and see live logs.
                 </p>
               </div>
 

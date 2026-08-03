@@ -6,7 +6,7 @@ const { requireAuth } = require('../middleware/auth');
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { email, password, role = 'viewer' } = req.body;
+  const { email, password, role = 'admin' } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: 'email and password are required' });
