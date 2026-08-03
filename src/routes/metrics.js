@@ -2,10 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// GET /api/metrics
 router.get('/', async (req, res) => {
   try {
-    // 1. Summary
     const summaryRes = await db.query(`
       SELECT 
         COUNT(*) as "totalRuns",
@@ -17,7 +15,6 @@ router.get('/', async (req, res) => {
       FROM runs
     `);
 
-    // 2. Runs per day (last 30 days) - using generate_series
     const runsPerDayRes = await db.query(`
       WITH dates AS (
         SELECT generate_series(
@@ -37,7 +34,6 @@ router.get('/', async (req, res) => {
       ORDER BY d.date ASC
     `);
 
-    // 3. Duration Trend (last 30 days, only days with completed runs)
     const durationTrendRes = await db.query(`
       SELECT 
         TO_CHAR(triggered_at::date, 'YYYY-MM-DD') as date,
@@ -49,7 +45,6 @@ router.get('/', async (req, res) => {
       ORDER BY triggered_at::date ASC
     `);
 
-    // 4. Top Pipelines by total runs
     const topPipelinesRes = await db.query(`
       SELECT 
         p.id as "pipelineId",
@@ -71,11 +66,11 @@ router.get('/', async (req, res) => {
         failedCount: parseInt(summaryRes.rows[0].failedCount || 0),
         pendingCount: parseInt(summaryRes.rows[0].pendingCount || 0),
         successRate: parseFloat(summaryRes.rows[0].successRate || 0),
-        avgDurationSeconds: parseInt(summaryRes.rows[0].avgDurationSeconds || 0)
+        avgDurationSeconds: parseInt(summaryRes.rows[0].avgDurationSeconds || 0),
       },
       runsPerDay: runsPerDayRes.rows,
       durationTrend: durationTrendRes.rows,
-      topPipelines: topPipelinesRes.rows
+      topPipelines: topPipelinesRes.rows,
     });
 
   } catch (err) {

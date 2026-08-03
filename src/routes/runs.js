@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// GET /api/runs?pipelineId=1
 router.get('/', async (req, res) => {
   try {
     const { pipelineId, limit = 20, offset = 0 } = req.query;
@@ -27,7 +26,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/runs/:id
 router.get('/:id', async (req, res) => {
   try {
     const run = await db.query(`
@@ -49,7 +47,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// GET /api/runs/:id/logs — fetch stored logs (for completed runs)
 router.get('/:id/logs', async (req, res) => {
   try {
     const result = await db.query(

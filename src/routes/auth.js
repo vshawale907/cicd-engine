@@ -4,7 +4,6 @@ const db = require('../db');
 const { hashPassword, comparePassword, generateToken } = require('../auth');
 const { requireAuth } = require('../middleware/auth');
 
-// POST /api/auth/register
 router.post('/register', async (req, res) => {
   const { email, password, role = 'admin' } = req.body;
 
@@ -31,7 +30,6 @@ router.post('/register', async (req, res) => {
     return res.status(201).json({ token, user });
   } catch (err) {
     if (err.code === '23505') {
-      // unique_violation — email already exists
       return res.status(409).json({ error: 'Email already registered' });
     }
     console.error('Register error:', err);
@@ -39,7 +37,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -72,7 +69,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET /api/auth/me  — protected
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await db.query(

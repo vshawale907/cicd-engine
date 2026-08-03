@@ -3,7 +3,6 @@ const router = express.Router();
 const db = require('../db');
 const pipelineQueue = require('../queue');
 
-// GET /api/pipelines
 router.get('/', async (req, res) => {
   try {
     const result = await db.query(`
@@ -22,7 +21,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/pipelines/:id
 router.get('/:id', async (req, res) => {
   try {
     const result = await db.query(`SELECT * FROM pipelines WHERE id = $1`, [req.params.id]);
@@ -33,7 +31,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/pipelines/:id/trigger — manually trigger without a GitHub push
 router.post('/:id/trigger', async (req, res) => {
   try {
     const p = await db.query(`SELECT * FROM pipelines WHERE id = $1`, [req.params.id]);

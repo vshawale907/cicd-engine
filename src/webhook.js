@@ -4,7 +4,6 @@ const router = express.Router();
 const db = require('./db');
 const pipelineQueue = require('./queue');
 
-// Verify that the request actually came from GitHub (not a random attacker)
 function verifySignature(req) {
   const signature = req.headers['x-hub-signature-256'];
   if (!signature) return false;
@@ -14,7 +13,6 @@ function verifySignature(req) {
     .update(JSON.stringify(req.body))
     .digest('hex')}`;
 
-  // timingSafeEqual prevents timing attacks
   try {
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
   } catch {
@@ -22,7 +20,6 @@ function verifySignature(req) {
   }
 }
 
-// POST /webhook/github
 router.post('/github', async (req, res) => {
   if (!verifySignature(req)) {
     console.warn('⚠️ Invalid webhook signature — rejected');
@@ -42,7 +39,6 @@ router.post('/github', async (req, res) => {
   console.log(`📨 Push to ${repoName}/${branch} by ${pusher?.name}`);
 
   try {
-    // Find or create a pipeline for this repo + branch combo
     let result = await db.query(
       `SELECT id FROM pipelines WHERE repo_url = $1 AND branch = $2`,
       [repoUrl, branch]
@@ -59,7 +55,6 @@ router.post('/github', async (req, res) => {
       pipelineId = result.rows[0].id;
     }
 
-    // Create run record
     const run = await db.query(
       `INSERT INTO runs (pipeline_id, commit_sha, status, triggered_by)
        VALUES ($1, $2, 'pending', $3) RETURNING id`,
@@ -67,15 +62,12 @@ router.post('/github', async (req, res) => {
     );
     const runId = run.rows[0].id;
 
-    // Add job to queue
     await pipelineQueue.add(
       { runId, pipelineId, repoUrl, branch, commitSha },
-      { attempts: 3, backoff: 5000 } // retry 3 times, 5s apart
+      { attempts: 3, backoff: 5000 }
     );
 
     console.log(`✅ Queued run ${runId}`);
-
-    // Must respond to GitHub within 10 seconds
     res.status(202).json({ message: 'Pipeline queued', runId, pipelineId });
 
   } catch (err) {

@@ -4,11 +4,11 @@ const fs = require('fs');
 const os = require('os');
 const yaml = require('js-yaml');
 
-// ─── Environment-aware config loading ─────────────────────────────────────────
 const envFile =
   process.env.NODE_ENV === 'production' ? '.env.production' :
   process.env.NODE_ENV === 'test'       ? '.env.test' :
                                           '.env.development';
+
 require('dotenv').config({ path: path.resolve(process.cwd(), envFile) });
 require('dotenv').config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -18,31 +18,26 @@ const { runStep } = require('./docker-runner');
 const { publishLog } = require('./pubsub');
 const { notifySlack } = require('./notifications');
 
-// Process up to 2 jobs at the same time
 pipelineQueue.process(2, async (job) => {
   const { runId, pipelineId, repoUrl, branch, commitSha } = job.data;
   const triggeredBy = job.data.triggeredBy || 'unknown';
   const tmpDir = path.join(os.tmpdir(), `cicd-run-${runId}`);
-  const startTime = Date.now(); // ← Feature 3: track start time
+  const startTime = Date.now();
 
   console.log(`\n🚀 Processing run ${runId} for ${repoUrl}`);
 
-  let finalStatus = 'failed'; // default; overwritten on success
+  let finalStatus = 'failed';
 
   try {
-    // 1. Mark run as running
     await db.query(`UPDATE runs SET status = 'running' WHERE id = $1`, [runId]);
     publishLog(runId, `🚀 Pipeline started for commit ${commitSha}`);
 
-    // 2. Clone the repo
     publishLog(runId, `📦 Cloning ${repoUrl} (branch: ${branch})...`);
     fs.mkdirSync(tmpDir, { recursive: true });
     const git = simpleGit();
     await git.clone(repoUrl, tmpDir, ['--branch', branch, '--depth', '1']);
     publishLog(runId, `✅ Repository cloned`);
 
-    // ─── Feature 2: YAML config support ───────────────────────────────────────
-    // Priority: .pipeline.yml → .pipeline.yaml → .pipeline.json
     let config;
     const ymlPath  = path.join(tmpDir, '.pipeline.yml');
     const yamlPath = path.join(tmpDir, '.pipeline.yaml');
@@ -58,28 +53,20 @@ pipelineQueue.process(2, async (job) => {
       config = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
       publishLog(runId, `📋 Using config from .pipeline.json`);
     } else {
-      throw new Error(
-        'No pipeline config found. Add one of: .pipeline.yml, .pipeline.yaml, .pipeline.json'
-      );
+      throw new Error('No pipeline config found. Add one of: .pipeline.yml, .pipeline.yaml, .pipeline.json');
     }
-    // ──────────────────────────────────────────────────────────────────────────
 
     const steps = config.steps || [];
     publishLog(runId, `📋 Found ${steps.length} step(s) to run`);
 
-    // 4. Run each step one by one
     let allPassed = true;
 
-    // Helper function to execute a single step
     async function executeStep(step, isParallel = false) {
-      // ─── Feature 1: per-step Docker image ───────────────────────────────────
       const image = step.image || 'node:18-alpine';
       const prefix = isParallel ? `[${step.name}] ` : '';
       publishLog(runId, `\n▶️ ${prefix}Step: ${step.name}  [${image}]`);
       publishLog(runId, `   ${prefix}Command: ${step.command}`);
-      // ────────────────────────────────────────────────────────────────────────
 
-      // Insert step record
       const stepRes = await db.query(
         `INSERT INTO steps (run_id, name, command, status, started_at)
          VALUES ($1, $2, $3, 'running', NOW()) RETURNING id`,
@@ -90,12 +77,11 @@ pipelineQueue.process(2, async (job) => {
       try {
         const { exitCode } = await runStep(tmpDir, step.command, (line) => {
           publishLog(runId, `  ${prefix}${line}`);
-          // Save every log line to DB for history
           db.query(
             `INSERT INTO logs (run_id, step_id, line) VALUES ($1, $2, $3)`,
             [runId, stepId, line]
           );
-        }, image); // ← Feature 1: pass image to docker-runner
+        }, image);
 
         const stepStatus = exitCode === 0 ? 'success' : 'failed';
         await db.query(
@@ -110,7 +96,6 @@ pipelineQueue.process(2, async (job) => {
           publishLog(runId, `❌ ${prefix}"${step.name}" failed (exit code: ${exitCode})`);
           return false;
         }
-
       } catch (stepErr) {
         await db.query(
           `UPDATE steps SET status = 'failed', completed_at = NOW() WHERE id = $1`,
@@ -139,7 +124,6 @@ pipelineQueue.process(2, async (job) => {
       }
     }
 
-    // 5. Final status
     finalStatus = allPassed ? 'success' : 'failed';
     await db.query(
       `UPDATE runs SET status = $1, completed_at = NOW() WHERE id = $2`,
@@ -147,11 +131,9 @@ pipelineQueue.process(2, async (job) => {
     );
 
     publishLog(runId, `\n${allPassed ? '🎉 Pipeline PASSED' : '💥 Pipeline FAILED'}`);
-    publishLog(runId, `__PIPELINE_DONE__`); // Signal to frontend: stop streaming
+    publishLog(runId, `__PIPELINE_DONE__`);
 
-    // ─── Feature 3: Slack notification ────────────────────────────────────────
     try {
-      // Fetch repo name for the notification message
       const pipelineRow = await db.query(
         `SELECT repo_name, branch FROM pipelines WHERE id = $1`,
         [pipelineId]
@@ -170,10 +152,8 @@ pipelineQueue.process(2, async (job) => {
         durationSeconds: Math.round((Date.now() - startTime) / 1000),
       });
     } catch (slackErr) {
-      // Slack errors must never affect pipeline result
-      console.warn(`⚠️  Slack notification wrapper error: ${slackErr.message}`);
+      console.warn(`⚠️  Slack notification error: ${slackErr.message}`);
     }
-    // ──────────────────────────────────────────────────────────────────────────
 
     return { status: finalStatus };
 
@@ -186,7 +166,6 @@ pipelineQueue.process(2, async (job) => {
     publishLog(runId, `❌ Fatal error: ${err.message}`);
     publishLog(runId, `__PIPELINE_DONE__`);
 
-    // Still try to notify Slack on a crash-level failure
     try {
       const pipelineRow = await db.query(
         `SELECT repo_name, branch FROM pipelines WHERE id = $1`,
@@ -203,21 +182,18 @@ pipelineQueue.process(2, async (job) => {
         durationSeconds: Math.round((Date.now() - startTime) / 1000),
       });
     } catch (slackErr) {
-      console.warn(`⚠️  Slack notification wrapper error (crash path): ${slackErr.message}`);
+      console.warn(`⚠️  Slack notification error: ${slackErr.message}`);
     }
 
-    throw err; // Bull marks job as failed, will retry
+    throw err;
 
   } finally {
-    // Always clean up temp files
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } catch (e) {}
   }
 });
 
-// On restart: re-queue any runs that were stuck in 'running' state
-// This handles the case where the worker crashed mid-job
 async function recoverStuckJobs() {
   const result = await db.query(`
     SELECT r.id as run_id, r.pipeline_id, r.commit_sha, p.repo_url, p.branch
