@@ -12,17 +12,14 @@ export default function App() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [page, setPage] = useState('pipelines')
-  const [authPage, setAuthPage] = useState('login') // 'login' | 'signup'
+  const [authPage, setAuthPage] = useState('login')
 
-  // Not logged in → show Login or SignUp
   if (!user) {
     if (authPage === 'signup') {
       return <SignUpPage onGoToLogin={() => setAuthPage('login')} />
     }
     return <LoginPage onGoToSignUp={() => setAuthPage('signup')} />
   }
-
-  const isPipelinesActive = page === 'pipelines' && (location.pathname === '/' || location.pathname.startsWith('/runs'));
 
   const navLink = (path, label, pageType) => (
     <Link 
@@ -50,7 +47,6 @@ export default function App() {
           {navLink('/runs', 'Runs', 'pipelines')}
           {metricsLink()}
 
-          {/* Spacer */}
           <div className="ml-auto flex items-center gap-4">
             <span className="text-xs text-slate-400">
               {user.email}

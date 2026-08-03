@@ -58,7 +58,6 @@ export default function PipelineList() {
                     {p.last_status}
                   </span>
                 )}
-                {/* Only admins can trigger runs */}
                 {user?.role === 'admin' && (
                   <button onClick={() => trigger(p.id)}
                     className="text-sm bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg transition">

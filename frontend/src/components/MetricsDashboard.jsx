@@ -49,7 +49,6 @@ export default function MetricsDashboard() {
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Metrics Dashboard</h1>
 
-      {/* SECTION 1 - Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-slate-800 rounded-xl p-5 border border-slate-700">
           <div className="text-sm text-slate-400 mb-1">Total Runs</div>
@@ -72,7 +71,6 @@ export default function MetricsDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* SECTION 2 - Runs per day bar chart */}
         <div className="bg-slate-800 rounded-xl p-5 border border-slate-700">
           <h2 className="text-lg font-semibold mb-6">Runs per Day (30 Days)</h2>
           <div className="h-[260px]">
@@ -97,7 +95,6 @@ export default function MetricsDashboard() {
           </div>
         </div>
 
-        {/* SECTION 3 - Avg duration trend line chart */}
         <div className="bg-slate-800 rounded-xl p-5 border border-slate-700">
           <h2 className="text-lg font-semibold mb-6">Average Duration Trend</h2>
           <div className="h-[200px]">
@@ -121,7 +118,6 @@ export default function MetricsDashboard() {
         </div>
       </div>
 
-      {/* SECTION 4 - Top pipelines table */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
         <div className="p-5 border-b border-slate-700">
           <h2 className="text-lg font-semibold">Top Pipelines</h2>

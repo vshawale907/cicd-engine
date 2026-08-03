@@ -12,7 +12,6 @@ export default function LogViewer() {
   const wsRef = useRef(null)
   const bottomRef = useRef(null)
 
-  // Auto-scroll to bottom as new lines arrive
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
@@ -28,7 +27,6 @@ export default function LogViewer() {
     const data = await res.json()
     setRun(data)
 
-    // If already finished, load logs from DB (no need for live stream)
     if (data.status === 'success' || data.status === 'failed') {
       setDone(true)
       const logsRes = await apiFetch(`/api/runs/${runId}/logs`)
@@ -40,7 +38,6 @@ export default function LogViewer() {
   function openWebSocket() {
     if (!token) return
     
-    // Pass token as query param — backend verifies it on connection
     const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.host}/ws`
     const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`)
     wsRef.current = ws
@@ -55,7 +52,7 @@ export default function LogViewer() {
 
       if (data.line === '__PIPELINE_DONE__') {
         setDone(true)
-        loadRun() // refresh final status
+        loadRun()
         return
       }
 
@@ -96,7 +93,6 @@ export default function LogViewer() {
         </div>
       )}
 
-      {/* Terminal */}
       <div className="bg-slate-950 rounded-xl border border-slate-700 p-5 font-mono text-sm h-[500px] overflow-y-auto">
         {logs.length === 0 && !done && (
           <p className="text-slate-500 animate-pulse">Waiting for logs...</p>

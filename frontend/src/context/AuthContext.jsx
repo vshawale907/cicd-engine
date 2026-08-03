@@ -3,10 +3,6 @@ import { apiFetch, setToken } from '../utils/api'
 
 const AuthContext = createContext(null)
 
-/**
- * AuthProvider wraps the app and exposes { user, token, login, logout }.
- * The JWT is stored ONLY in React state (never localStorage / sessionStorage).
- */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setTokenState] = useState(null)
@@ -25,7 +21,7 @@ export function AuthProvider({ children }) {
 
     const data = await res.json()
     setTokenState(data.token)
-    setToken(data.token)   // sync to the apiFetch module
+    setToken(data.token)
     setUser(data.user)
     return data
   }, [])
@@ -62,7 +58,6 @@ export function AuthProvider({ children }) {
   )
 }
 
-/** Hook to consume the auth context from any component. */
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')

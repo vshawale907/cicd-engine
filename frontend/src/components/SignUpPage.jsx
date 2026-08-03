@@ -19,7 +19,6 @@ function PasswordStrength({ password }) {
 
   return (
     <div className="mt-2 space-y-2">
-      {/* Strength bar */}
       <div className="flex gap-1 h-1">
         {bar.map((b, i) => (
           <div
@@ -33,7 +32,6 @@ function PasswordStrength({ password }) {
       <p className={`text-xs font-medium ${bar[score - 1]?.color.replace('bg-', 'text-') || 'text-slate-500'}`}>
         {score > 0 ? bar[score - 1].label : ''}
       </p>
-      {/* Checklist */}
       <ul className="space-y-1">
         {checks.map((c, i) => (
           <li key={i} className={`flex items-center gap-1.5 text-xs transition-colors ${c.pass ? 'text-emerald-400' : 'text-slate-500'}`}>
@@ -73,7 +71,6 @@ export default function SignUpPage({ onGoToLogin }) {
     try {
       await register(email, password)
       setSuccess(true)
-      // AuthContext sets user → App.jsx automatically shows dashboard
     } catch (err) {
       setError(err.message)
     } finally {
@@ -86,14 +83,12 @@ export default function SignUpPage({ onGoToLogin }) {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-      {/* Ambient glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative">
-        {/* Logo / Title */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-4xl mb-4">
             ⚡
@@ -102,7 +97,6 @@ export default function SignUpPage({ onGoToLogin }) {
           <p className="text-slate-400 mt-2 text-sm">Join the CI/CD Engine workspace</p>
         </div>
 
-        {/* Card */}
         <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700 p-8 shadow-2xl">
           {success ? (
             <div className="text-center py-4">
@@ -112,8 +106,6 @@ export default function SignUpPage({ onGoToLogin }) {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
-
-              {/* Email */}
               <div>
                 <label htmlFor="signup-email" className="block text-sm font-medium text-slate-300 mb-1.5">
                   Email address
@@ -130,7 +122,6 @@ export default function SignUpPage({ onGoToLogin }) {
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label htmlFor="signup-password" className="block text-sm font-medium text-slate-300 mb-1.5">
                   Password
@@ -157,7 +148,6 @@ export default function SignUpPage({ onGoToLogin }) {
                 <PasswordStrength password={password} />
               </div>
 
-              {/* Confirm Password */}
               <div>
                 <label htmlFor="signup-confirm" className="block text-sm font-medium text-slate-300 mb-1.5">
                   Confirm password
@@ -180,7 +170,6 @@ export default function SignUpPage({ onGoToLogin }) {
                 )}
               </div>
 
-              {/* Role info banner */}
               <div className="flex items-start gap-2.5 bg-emerald-900/20 border border-emerald-700/40 rounded-lg px-3 py-2.5">
                 <span className="text-emerald-400 text-sm mt-0.5">✅</span>
                 <p className="text-xs text-slate-400">
@@ -188,14 +177,12 @@ export default function SignUpPage({ onGoToLogin }) {
                 </p>
               </div>
 
-              {/* Error */}
               {error && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400 flex items-center gap-2">
                   <span>⚠️</span> {error}
                 </div>
               )}
 
-              {/* Submit */}
               <button
                 id="signup-submit"
                 type="submit"
@@ -217,7 +204,6 @@ export default function SignUpPage({ onGoToLogin }) {
           )}
         </div>
 
-        {/* Switch to Login */}
         <p className="text-center text-sm text-slate-500 mt-6">
           Already have an account?{' '}
           <button

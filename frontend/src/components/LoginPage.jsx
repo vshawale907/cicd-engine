@@ -14,7 +14,6 @@ export default function LoginPage({ onGoToSignUp }) {
     setLoading(true)
     try {
       await login(email, password)
-      // AuthContext sets user → App.jsx will automatically show the dashboard
     } catch (err) {
       setError(err.message)
     } finally {
@@ -24,14 +23,12 @@ export default function LoginPage({ onGoToSignUp }) {
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
-      {/* Ambient glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative">
-        {/* Logo / Title */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-4xl mb-4">
             ⚡
@@ -40,10 +37,8 @@ export default function LoginPage({ onGoToSignUp }) {
           <p className="text-slate-400 mt-2 text-sm">Sign in to your workspace</p>
         </div>
 
-        {/* Card */}
         <div className="bg-slate-800/80 backdrop-blur-sm rounded-2xl border border-slate-700 p-8 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1.5">
                 Email address
@@ -61,7 +56,6 @@ export default function LoginPage({ onGoToSignUp }) {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
                 Password
@@ -79,14 +73,12 @@ export default function LoginPage({ onGoToSignUp }) {
               />
             </div>
 
-            {/* Error */}
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400 flex items-center gap-2">
                 <span>⚠️</span> {error}
               </div>
             )}
 
-            {/* Submit */}
             <button
               id="login-submit"
               type="submit"
@@ -107,7 +99,6 @@ export default function LoginPage({ onGoToSignUp }) {
           </form>
         </div>
 
-        {/* Switch to Sign Up */}
         <p className="text-center text-sm text-slate-500 mt-6">
           Don't have an account?{' '}
           <button
