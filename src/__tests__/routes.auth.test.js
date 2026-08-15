@@ -18,7 +18,6 @@ describe('POST /api/auth/register', () => {
   });
 
   test('returns 201 with token and user on valid input', async () => {
-    // Mock successful insertion
     db.query.mockResolvedValueOnce({
       rows: [{ id: 1, email: 'new@example.com', role: 'viewer', created_at: new Date() }]
     });
@@ -51,7 +50,7 @@ describe('POST /api/auth/register', () => {
 
   test('returns 409 if email already exists', async () => {
     const error = new Error('duplicate key param');
-    error.code = '23505'; // PostgreSQL unique violation code
+    error.code = '23505';
     db.query.mockRejectedValueOnce(error);
 
     const res = await request(app).post('/api/auth/register').send({

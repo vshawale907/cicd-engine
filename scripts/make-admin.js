@@ -1,8 +1,3 @@
-/**
- * One-time script to upgrade a user to admin role.
- * Usage: node scripts/make-admin.js <email>
- * Example: node scripts/make-admin.js vaibhavhawale907@gmail.com
- */
 require('dotenv').config();
 const { Pool } = require('pg');
 

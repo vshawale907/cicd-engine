@@ -22,7 +22,6 @@ describe('hashPassword / comparePassword', () => {
     const hash1 = await hashPassword(password);
     const hash2 = await hashPassword(password);
     expect(hash1).not.toBe(hash2);
-    // both should still validate
     expect(await comparePassword(password, hash1)).toBe(true);
     expect(await comparePassword(password, hash2)).toBe(true);
   });
@@ -61,7 +60,6 @@ describe('generateToken / verifyToken', () => {
 
   test('tampered token throws', () => {
     const token = generateToken(user);
-    // alter the token slightly (change last character)
     const tampered = token.slice(0, -1) + (token.endsWith('a') ? 'b' : 'a');
     expect(() => verifyToken(tampered)).toThrow();
   });
