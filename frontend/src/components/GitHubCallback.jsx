@@ -11,7 +11,6 @@ export default function GitHubCallback() {
     const err = searchParams.get('error')
 
     if (success === 'true') {
-      // Redirect to GitHub tab on dashboard after short delay
       const timer = setTimeout(() => {
         navigate('/?tab=github')
       }, 1500)

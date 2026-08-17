@@ -1,26 +1,9 @@
-/**
- * src/routes/github.js
- * GitHub OAuth + repository management routes.
- *
- * Routes:
- *   GET  /api/github/auth-url         — Returns GitHub OAuth URL (requires JWT)
- *   GET  /api/github/callback         — GitHub redirects here after authorization
- *   GET  /api/github/status           — Connected GitHub account info
- *   DELETE /api/github/disconnect     — Disconnect GitHub (removes all connected repos)
- *   GET  /api/github/repos            — List GitHub repos for the user
- *   GET  /api/github/connected-repos  — List connected repos with pipeline status
- *   POST /api/github/repos/:repoId/connect     — Connect a repo (auto-installs webhook)
- *   DELETE /api/github/repos/:repoId/disconnect — Disconnect a repo (removes webhook)
- */
-
 const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
-
-// ── GitHub API helper ────────────────────────────────────────────────────────
 
 async function githubApi(path, accessToken, options = {}) {
   const url = `https://api.github.com${path}`;
@@ -35,8 +18,6 @@ async function githubApi(path, accessToken, options = {}) {
   });
   return res;
 }
-
-// ── State token (CSRF protection) ───────────────────────────────────────────
 
 function generateStateToken(userId) {
   const secret = process.env.JWT_SECRET;
@@ -56,13 +37,6 @@ function verifyStateToken(state) {
   return payload;
 }
 
-// ── Routes ───────────────────────────────────────────────────────────────────
-
-/**
- * GET /api/github/auth-url
- * Returns the GitHub OAuth authorization URL.
- * Requires: JWT auth header.
- */
 router.get('/auth-url', requireAuth, (req, res) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   if (!clientId) {
@@ -84,18 +58,11 @@ router.get('/auth-url', requireAuth, (req, res) => {
   }
 });
 
-/**
- * GET /api/github/callback
- * GitHub redirects here after the user authorizes (or cancels) the OAuth app.
- * Exchanges the code for an access token and redirects the browser back to
- * the frontend with success=true (or error=<reason>).
- */
 router.get('/callback', async (req, res) => {
   const { code, state, error: oauthError } = req.query;
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const redirect = (params) => res.redirect(`${frontendUrl}/github/callback?${new URLSearchParams(params)}`);
 
-  // OAuth cancelled or denied
   if (oauthError) {
     return redirect({ error: oauthError });
   }
@@ -104,7 +71,6 @@ router.get('/callback', async (req, res) => {
     return redirect({ error: 'missing_params' });
   }
 
-  // Verify CSRF state
   let userId;
   try {
     const payload = verifyStateToken(state);
@@ -114,7 +80,6 @@ router.get('/callback', async (req, res) => {
     return redirect({ error: 'invalid_state' });
   }
 
-  // Exchange code for access token
   let accessToken;
   try {
     const tokenRes = await fetch('https://github.com/login/oauth/access_token', {
@@ -143,7 +108,6 @@ router.get('/callback', async (req, res) => {
     return redirect({ error: 'token_exchange_failed' });
   }
 
-  // Fetch GitHub user profile
   let githubUser;
   try {
     const userRes = await githubApi('/user', accessToken);
@@ -156,7 +120,6 @@ router.get('/callback', async (req, res) => {
     return redirect({ error: 'github_api_failed' });
   }
 
-  // Upsert github_integrations row (one per app user)
   try {
     await db.query(
       `INSERT INTO github_integrations
@@ -180,10 +143,6 @@ router.get('/callback', async (req, res) => {
   }
 });
 
-/**
- * GET /api/github/status
- * Returns connected GitHub account info for the current user.
- */
 router.get('/status', requireAuth, async (req, res) => {
   try {
     const result = await db.query(
@@ -203,14 +162,8 @@ router.get('/status', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/github/disconnect
- * Disconnects GitHub: removes webhooks from GitHub, then deletes the
- * integration row (cascades to github_repositories).
- */
 router.delete('/disconnect', requireAuth, async (req, res) => {
   try {
-    // Gather repos+token for webhook cleanup
     const rows = await db.query(
       `SELECT gi.access_token, gr.webhook_id, gr.owner, gr.name
        FROM github_integrations gi
@@ -227,12 +180,11 @@ router.delete('/disconnect', requireAuth, async (req, res) => {
             await githubApi(`/repos/${row.owner}/${row.name}/hooks/${row.webhook_id}`, accessToken, {
               method: 'DELETE',
             });
-          } catch (e) { /* best effort */ }
+          } catch (e) {}
         }
       }
     }
 
-    // Delete integration (cascades to github_repositories)
     await db.query(`DELETE FROM github_integrations WHERE user_id = $1`, [req.user.id]);
 
     res.json({ message: 'GitHub disconnected successfully' });
@@ -242,11 +194,6 @@ router.delete('/disconnect', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * GET /api/github/repos
- * Lists all GitHub repos accessible to the authenticated user.
- * Marks each repo as connected/not-connected.
- */
 router.get('/repos', requireAuth, async (req, res) => {
   try {
     const integResult = await db.query(
@@ -260,7 +207,6 @@ router.get('/repos', requireAuth, async (req, res) => {
 
     const accessToken = integResult.rows[0].access_token;
 
-    // Paginate through all repos
     let allRepos = [];
     let page = 1;
     while (true) {
@@ -271,7 +217,6 @@ router.get('/repos', requireAuth, async (req, res) => {
 
       if (!apiRes.ok) {
         if (apiRes.status === 401) {
-          // Token has been revoked
           await db.query(`DELETE FROM github_integrations WHERE user_id = $1`, [req.user.id]);
           return res.status(401).json({ error: 'GitHub token revoked. Please reconnect your GitHub account.' });
         }
@@ -287,7 +232,6 @@ router.get('/repos', requireAuth, async (req, res) => {
       page++;
     }
 
-    // Get already-connected repo IDs for this user
     const connectedResult = await db.query(
       `SELECT github_repo_id FROM github_repositories WHERE user_id = $1`,
       [req.user.id]
@@ -314,11 +258,6 @@ router.get('/repos', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * GET /api/github/connected-repos
- * Lists repos that have been connected to CI/CD for this user, with
- * last pipeline status.
- */
 router.get('/connected-repos', requireAuth, async (req, res) => {
   try {
     const result = await db.query(
@@ -342,14 +281,6 @@ router.get('/connected-repos', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * POST /api/github/repos/:repoId/connect
- * Connects a GitHub repository:
- *  1. Creates a per-repo webhook secret
- *  2. Installs a webhook on GitHub pointing to /webhook/github
- *  3. Creates (or reuses) a pipelines row
- *  4. Inserts into github_repositories
- */
 router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
   const { repoId } = req.params;
   const {
@@ -363,7 +294,6 @@ router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
   }
 
   try {
-    // Get GitHub integration
     const integResult = await db.query(
       `SELECT id, access_token FROM github_integrations WHERE user_id = $1`,
       [req.user.id]
@@ -373,7 +303,6 @@ router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
     }
     const { id: integrationId, access_token: accessToken } = integResult.rows[0];
 
-    // Guard: already connected?
     const existing = await db.query(
       `SELECT id FROM github_repositories WHERE user_id = $1 AND github_repo_id = $2`,
       [req.user.id, repoId]
@@ -382,15 +311,12 @@ router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
       return res.status(409).json({ error: 'Repository already connected' });
     }
 
-    // Generate per-repo webhook secret
     const webhookSecret = crypto.randomBytes(32).toString('hex');
 
-    // Determine webhook URL
     const backendUrl = process.env.BACKEND_URL ||
       `http://localhost:${process.env.PORT || 3000}`;
     const webhookUrl = `${backendUrl}/webhook/github`;
 
-    // Install webhook on GitHub
     let webhookId = null;
     try {
       const hookRes = await githubApi(`/repos/${owner}/${name}/hooks`, accessToken, {
@@ -416,13 +342,11 @@ router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
       } else {
         const errBody = await hookRes.json();
         console.warn(`⚠️  Webhook creation failed for ${full_name}:`, errBody.message);
-        // Proceed without webhook — user gets a warning in the response
       }
     } catch (hookErr) {
       console.warn(`⚠️  Webhook creation error for ${full_name}:`, hookErr.message);
     }
 
-    // Upsert pipeline for this repo
     let pipelineId = null;
     const existingPipeline = await db.query(
       `SELECT id FROM pipelines WHERE repo_url = $1 AND branch = $2`,
@@ -431,7 +355,6 @@ router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
 
     if (existingPipeline.rows.length) {
       pipelineId = existingPipeline.rows[0].id;
-      // Claim ownership if unowned
       await db.query(
         `UPDATE pipelines SET user_id = $1 WHERE id = $2 AND user_id IS NULL`,
         [req.user.id, pipelineId]
@@ -445,7 +368,6 @@ router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
       pipelineId = pipelineResult.rows[0].id;
     }
 
-    // Insert github_repositories row
     const repoResult = await db.query(
       `INSERT INTO github_repositories
          (user_id, github_integration_id, github_repo_id, owner, name, full_name,
@@ -476,11 +398,6 @@ router.post('/repos/:repoId/connect', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * DELETE /api/github/repos/:repoId/disconnect
- * Disconnects a repo: removes the GitHub webhook, then deletes the
- * github_repositories row.
- */
 router.delete('/repos/:repoId/disconnect', requireAuth, async (req, res) => {
   const { repoId } = req.params;
 
@@ -499,7 +416,6 @@ router.delete('/repos/:repoId/disconnect', requireAuth, async (req, res) => {
 
     const { gr_id, webhook_id, owner, name, access_token } = result.rows[0];
 
-    // Remove webhook from GitHub
     if (webhook_id) {
       try {
         await githubApi(`/repos/${owner}/${name}/hooks/${webhook_id}`, access_token, {

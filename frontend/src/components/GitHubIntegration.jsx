@@ -15,7 +15,6 @@ export default function GitHubIntegration() {
   const [connecting, setConnecting] = useState(false)
   const [error, setError] = useState(null)
 
-  // Repositories
   const [connectedRepos, setConnectedRepos] = useState([])
   const [availableRepos, setAvailableRepos] = useState([])
   const [loadingRepos, setLoadingRepos] = useState(false)
@@ -64,7 +63,6 @@ export default function GitHubIntegration() {
         throw new Error(data.error || 'Failed to get GitHub authorization URL')
       }
 
-      // Redirect browser to GitHub OAuth
       window.location.href = data.url
     } catch (err) {
       setError(err.message)
@@ -137,7 +135,6 @@ export default function GitHubIntegration() {
         alert(`Note: ${data.webhookWarning}`)
       }
 
-      // Mark as connected locally and reload connected list
       setAvailableRepos(prev =>
         prev.map(r => (r.id === repo.id ? { ...r, connected: true } : r))
       )
@@ -198,7 +195,6 @@ export default function GitHubIntegration() {
         </div>
       )}
 
-      {/* GitHub Account Connection Card */}
       <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
         {!status?.connected ? (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -253,7 +249,6 @@ export default function GitHubIntegration() {
         )}
       </div>
 
-      {/* Connected Repositories Section */}
       {status?.connected && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -326,7 +321,6 @@ export default function GitHubIntegration() {
         </div>
       )}
 
-      {/* Available Repositories Modal / Drawer */}
       {showRepoSelector && (
         <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 space-y-4">
           <div className="flex items-center justify-between">

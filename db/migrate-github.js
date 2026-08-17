@@ -1,9 +1,3 @@
-/**
- * db/migrate-github.js
- * Incremental migration -- adds GitHub OAuth tables to an existing database.
- * Safe to run multiple times (idempotent).
- */
-
 const path = require('path');
 
 const envFile =
@@ -26,14 +20,12 @@ async function migrate() {
   try {
     await client.query('BEGIN');
 
-    // 1. Add user_id to pipelines (nullable, safe for existing rows)
     await client.query(`
       ALTER TABLE pipelines
         ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);
     `);
     console.log('OK  pipelines.user_id column ensured');
 
-    // 2. Create github_integrations table
     await client.query(`
       CREATE TABLE IF NOT EXISTS github_integrations (
         id SERIAL PRIMARY KEY,
@@ -49,7 +41,6 @@ async function migrate() {
     `);
     console.log('OK  github_integrations table ensured');
 
-    // 3. Create github_repositories table
     await client.query(`
       CREATE TABLE IF NOT EXISTS github_repositories (
         id SERIAL PRIMARY KEY,

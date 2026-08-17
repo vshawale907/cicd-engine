@@ -4,18 +4,6 @@ const router = express.Router();
 const db = require('./db');
 const pipelineQueue = require('./queue');
 
-/**
- * verifySignature
- *
- * Strategy:
- *  1. Look up the sending repo in github_repositories by repository.id
- *     → use the per-repo webhook_secret (strongest, most specific)
- *     → attach repoUserId and repoPipelineId to req
- *  2. Fall back to global GITHUB_WEBHOOK_SECRET env var for
- *     manually-configured webhooks (backwards compatible)
- *
- * Returns boolean (true/false).
- */
 async function verifySignature(req) {
   const signature = req?.headers?.['x-hub-signature-256'];
   if (!signature) return false;
@@ -23,7 +11,6 @@ async function verifySignature(req) {
   const payload = JSON.stringify(req.body || {});
   const repoGithubId = req.body?.repository?.id;
 
-  // ── Strategy 1: per-repo secret from database ────────────────────────────
   if (repoGithubId && db && typeof db.query === 'function') {
     try {
       const result = await db.query(
@@ -56,11 +43,9 @@ async function verifySignature(req) {
         }
       }
     } catch (dbErr) {
-      // DB connection failed or table does not exist yet; fall through
     }
   }
 
-  // ── Strategy 2: global GITHUB_WEBHOOK_SECRET (backwards compat) ──────────
   const globalSecret = process.env.GITHUB_WEBHOOK_SECRET;
   if (!globalSecret) return false;
 
@@ -101,7 +86,6 @@ router.post('/github', async (req, res) => {
     const userId = req.repoUserId || null;
 
     if (!pipelineId) {
-      // No pre-linked pipeline — find or create by URL + branch (legacy path)
       let result = await db.query(
         `SELECT id FROM pipelines WHERE repo_url = $1 AND branch = $2`,
         [repoUrl, branch]

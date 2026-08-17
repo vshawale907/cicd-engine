@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- GitHub OAuth integration: one record per user
 CREATE TABLE IF NOT EXISTS github_integrations (
   id SERIAL PRIMARY KEY,
   user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -57,7 +56,6 @@ CREATE TABLE IF NOT EXISTS github_integrations (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Repositories connected to CI/CD by a user
 CREATE TABLE IF NOT EXISTS github_repositories (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
