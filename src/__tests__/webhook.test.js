@@ -11,39 +11,39 @@ describe('verifySignature', () => {
     return 'sha256=' + crypto.createHmac('sha256', secret).update(bodyString).digest('hex');
   };
 
-  test('valid signature returns true', () => {
+  test('valid signature returns true', async () => {
     const signature = generateSignature(process.env.GITHUB_WEBHOOK_SECRET, payloadString);
     const req = {
       headers: { 'x-hub-signature-256': signature },
       body: payload
     };
-    expect(verifySignature(req)).toBe(true);
+    expect(await verifySignature(req)).toBe(true);
   });
 
-  test('wrong secret returns false', () => {
+  test('wrong secret returns false', async () => {
     const wrongSignature = generateSignature('wrong-secret', payloadString);
     const req = {
       headers: { 'x-hub-signature-256': wrongSignature },
       body: payload
     };
-    expect(verifySignature(req)).toBe(false);
+    expect(await verifySignature(req)).toBe(false);
   });
 
-  test('missing signature header returns false', () => {
+  test('missing signature header returns false', async () => {
     const req = {
       headers: {},
       body: payload
     };
-    expect(verifySignature(req)).toBe(false);
+    expect(await verifySignature(req)).toBe(false);
   });
 
-  test('empty body with valid signature returns true', () => {
+  test('empty body with valid signature returns true', async () => {
     const emptyPayloadString = JSON.stringify({});
     const signature = generateSignature(process.env.GITHUB_WEBHOOK_SECRET, emptyPayloadString);
     const req = {
       headers: { 'x-hub-signature-256': signature },
       body: {}
     };
-    expect(verifySignature(req)).toBe(true);
+    expect(await verifySignature(req)).toBe(true);
   });
 });

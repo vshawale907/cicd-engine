@@ -17,6 +17,7 @@ const pipelinesRouter = require('./routes/pipelines');
 const runsRouter = require('./routes/runs');
 const authRouter = require('./routes/auth');
 const metricsRouter = require('./routes/metrics');
+const githubRouter = require('./routes/github');
 const { subscribeToRun, unsubscribeFromRun } = require('./pubsub');
 const { requireAuth, requireAdmin } = require('./middleware/auth');
 const { verifyToken } = require('./auth');
@@ -34,6 +35,7 @@ app.use(express.json());
 
 app.use('/webhook', webhookRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/github', githubRouter);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/api/metrics', requireAuth, metricsRouter);

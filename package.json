@@ -11,6 +11,7 @@
     "test:watch": "jest --runInBand --watch",
     "test:coverage": "jest --runInBand --coverage",
     "migrate": "node db/migrate.js",
+    "migrate:github": "node db/migrate-github.js",
     "start:prod": "NODE_ENV=production node src/server.js",
     "worker:prod": "NODE_ENV=production node src/worker.js",
     "seed:admin": "node db/seed-admin.js"

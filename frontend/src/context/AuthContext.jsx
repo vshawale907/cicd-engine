@@ -1,11 +1,42 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { apiFetch, setToken } from '../utils/api'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [token, setTokenState] = useState(null)
+  const [token, setTokenState] = useState(() => localStorage.getItem('cicd_token'))
+  const [loading, setLoading] = useState(true)
+
+  const restoreUser = useCallback(async (authToken) => {
+    try {
+      setToken(authToken)
+      const res = await apiFetch('/api/auth/me')
+      if (res.ok) {
+        const userData = await res.json()
+        setUser(userData)
+      } else {
+        localStorage.removeItem('cicd_token')
+        setToken(null)
+        setTokenState(null)
+      }
+    } catch {
+      localStorage.removeItem('cicd_token')
+      setToken(null)
+      setTokenState(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem('cicd_token')
+    if (savedToken) {
+      restoreUser(savedToken)
+    } else {
+      setLoading(false)
+    }
+  }, [restoreUser])
 
   const login = useCallback(async (email, password) => {
     const res = await apiFetch('/api/auth/login', {
@@ -20,6 +51,7 @@ export function AuthProvider({ children }) {
     }
 
     const data = await res.json()
+    localStorage.setItem('cicd_token', data.token)
     setTokenState(data.token)
     setToken(data.token)
     setUser(data.user)
@@ -39,6 +71,7 @@ export function AuthProvider({ children }) {
     }
 
     const data = await res.json()
+    localStorage.setItem('cicd_token', data.token)
     setTokenState(data.token)
     setToken(data.token)
     setUser(data.user)
@@ -46,10 +79,15 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
+    localStorage.removeItem('cicd_token')
     setTokenState(null)
     setToken(null)
     setUser(null)
   }, [])
+
+  if (loading) {
+    return <div className="min-h-screen bg-slate-900 text-slate-400 flex items-center justify-center">Loading session...</div>
+  }
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, register }}>

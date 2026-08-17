@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import PipelineList from './components/PipelineList'
@@ -7,12 +7,26 @@ import LogViewer from './components/LogViewer'
 import LoginPage from './components/LoginPage'
 import SignUpPage from './components/SignUpPage'
 import MetricsDashboard from './components/MetricsDashboard'
+import GitHubIntegration from './components/GitHubIntegration'
+import GitHubCallback from './components/GitHubCallback'
 
 export default function App() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [page, setPage] = useState('pipelines')
   const [authPage, setAuthPage] = useState('login')
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('tab') === 'github') {
+      setPage('github')
+    }
+  }, [location])
+
+  // Allow callback page to render even if unauthenticated/during token state sync
+  if (location.pathname === '/github/callback') {
+    return <GitHubCallback />
+  }
 
   if (!user) {
     if (authPage === 'signup') {
@@ -25,16 +39,16 @@ export default function App() {
     <Link 
       to={path} 
       onClick={() => setPage(pageType)}
-      className={`text-sm ${(pageType === 'metrics' ? page === 'metrics' : page === 'pipelines' && location.pathname === path) ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
+      className={`text-sm ${(page === pageType && (pageType !== 'pipelines' || location.pathname === path)) ? 'text-white font-semibold' : 'text-slate-400 hover:text-white'}`}>
       {label}
     </Link>
   )
 
-  const metricsLink = () => (
+  const tabButton = (pageType, label) => (
     <button 
-      onClick={() => setPage('metrics')}
-      className={`text-sm ${page === 'metrics' ? 'text-white' : 'text-slate-400 hover:text-white'}`}>
-      Metrics
+      onClick={() => setPage(pageType)}
+      className={`text-sm ${page === pageType ? 'text-white font-semibold' : 'text-slate-400 hover:text-white'}`}>
+      {label}
     </button>
   )
 
@@ -45,7 +59,8 @@ export default function App() {
           <span className="text-xl font-bold text-emerald-400">⚡ CI/CD Engine</span>
           {navLink('/', 'Pipelines', 'pipelines')}
           {navLink('/runs', 'Runs', 'pipelines')}
-          {metricsLink()}
+          {tabButton('github', 'Connect GitHub')}
+          {tabButton('metrics', 'Metrics')}
 
           <div className="ml-auto flex items-center gap-4">
             <span className="text-xs text-slate-400">
@@ -71,6 +86,8 @@ export default function App() {
       <div className="max-w-6xl mx-auto px-6 py-8">
         {page === 'metrics' ? (
           <MetricsDashboard />
+        ) : page === 'github' ? (
+          <GitHubIntegration />
         ) : (
           <Routes>
             <Route path="/" element={<PipelineList />} />

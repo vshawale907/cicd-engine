@@ -38,8 +38,14 @@ export default function PipelineList() {
     <div>
       <h1 className="text-2xl font-bold mb-6">Pipelines</h1>
       {pipelines.length === 0 ? (
-        <div className="bg-slate-800 rounded-xl p-12 text-center text-slate-400">
-          No pipelines yet. Configure a GitHub webhook to get started.
+        <div className="bg-slate-800 rounded-xl p-12 text-center text-slate-400 border border-slate-700">
+          <p className="mb-4 text-base text-slate-300">No pipelines yet.</p>
+          <Link
+            to="/?tab=github"
+            className="inline-block bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition"
+          >
+            Connect a GitHub Repository →
+          </Link>
         </div>
       ) : (
         <div className="space-y-3">
